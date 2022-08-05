@@ -16,7 +16,7 @@ return new class extends Migration
         Schema::create('urls', function (Blueprint $table) {
             $table->id('url_id');
             $table->string('main_url');
-            $table->string('converted_url');
+            $table->string('converted_url')->nullable();
             $table->unsignedBigInteger('client_id');
             $table->foreign('client_id')->references('client_id')->on('clients')->onDelete('cascade');
             $table->timestamps();

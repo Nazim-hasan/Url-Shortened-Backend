@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ClientController;
 use App\Http\Controllers\LoginAPIController;
 use App\Http\Controllers\RegisterAPIController;
+use App\Http\Controllers\ShortUrlAPIController;
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -21,3 +22,4 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 });
 Route::post('/login',[LoginAPIController::class,'login']);
 Route::post('/register',[RegisterAPIController::class,'registration']);
+Route::post('/short',[ShortUrlAPIController::class,'shortUrl']);
