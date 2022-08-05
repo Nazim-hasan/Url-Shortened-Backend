@@ -23,3 +23,4 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 Route::post('/login',[LoginAPIController::class,'login']);
 Route::post('/register',[RegisterAPIController::class,'registration']);
 Route::post('/short',[ShortUrlAPIController::class,'shortUrl']);
+Route::post('/shorten',[ShortUrlAPIController::class,'getShortenedUrl']);

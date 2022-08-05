@@ -21,5 +21,9 @@ class ShortUrlAPIController extends Controller
             return $url;
         }
     }
+    public function getShortenedUrl(Request $req){
+        $url = Url::where('converted_url',$req->shortUrl)->first();
+        return $url->main_url;
+    }
     
 }
