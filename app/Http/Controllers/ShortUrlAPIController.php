@@ -6,7 +6,7 @@ use App\Models\Url;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use App\Models\Client;
-
+use App\Models\Admin;
 use Illuminate\Support\Carbon;
 
 class ShortUrlAPIController extends Controller
@@ -15,25 +15,22 @@ class ShortUrlAPIController extends Controller
         $mainUrl = $req->mainUrl;
         if ($mainUrl){
             $MyIpAddress = $req->ip(); //get myIP
-            $hitCount = Session()->get('APIHitCount');  //get previous spam count
-            echo "HitCount = ". $hitCount . '</br>';
+            $hitCount = Session()->get('APIHitCount');  //get previous hit count
             $duplicateUrlCounter = $this->isAlreadyExist($mainUrl, $MyIpAddress);
             if(!$duplicateUrlCounter){
                 $this->saveToDB($mainUrl, $MyIpAddress);
-                return $this->saveToDB($mainUrl, $MyIpAddress);
+                return $this->saveToDB($mainUrl, $MyIpAddress);     //fresh Url directly stores 
             }
             if($duplicateUrlCounter){
-                echo "Already exist!!!";
                 $req->session()->put('APIHitCount', $hitCount+1);
-                echo "HitCount = ". $hitCount . '</br>';
                 //incrementing counter for already exist shorten link for same IP's
             }
             
             $client = Client::where('ip_address',$MyIpAddress)->first();
-            $waitingTimeByAdmin = 1; //in minutes
-            $multipleUrlMax = 3;
+            $admin = Admin::where('admin_id',1)->first();
+            $waitingTimeByAdmin = $admin->waiting_time; //in minutes
+            $multipleUrlMax = $admin->spamming_limit;
             if($hitCount > $multipleUrlMax-1){
-                
                 $isBLocked = $this->setStatusClientDeActive($client, $waitingTimeByAdmin);
                 if($isBLocked){
                     return 'block done';
