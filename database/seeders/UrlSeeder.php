@@ -20,7 +20,8 @@ class UrlSeeder extends Seeder
         DB::table('urls')->insert([
             'main_url'=>Str::random(10),
             'converted_url'=>Str::random(15),
-            'client_id'=>1
+            'user_id'=>1,
+            'client_ip_address'=> 0,
         ]);
     }
 }

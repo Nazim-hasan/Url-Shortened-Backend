@@ -14,7 +14,7 @@ return new class extends Migration
     public function up()
     {
         Schema::create('clients', function (Blueprint $table) {
-            $table->id('client_id');
+            $table->bigIncrements('client_id');
             $table->string('name');
             $table->string('password');
             $table->string('email');
@@ -22,6 +22,7 @@ return new class extends Migration
             $table->string('ip_address')->nullable();
             $table->string('otp')->nullable();
             $table->string('status');
+            $table->dateTime('unblock_time', $precision = 0)->nullable();
             $table->timestamps();
         });
     }
