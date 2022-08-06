@@ -19,6 +19,7 @@ return new class extends Migration
             $table->string('password');
             $table->string('email');
             $table->integer('spamming_limit');
+            $table->integer('waiting_time');
             $table->timestamps();
         });
     }

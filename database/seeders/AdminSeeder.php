@@ -21,7 +21,8 @@ class AdminSeeder extends Seeder
             'name'=>Str::random(10),
             'password'=>Str::random(15),
             'email'=>Str::random(10).'@gmail.com',
-            'spamming_limit'=>5,
+            'spamming_limit'=>3,
+            'waiting_time'=>5,
         ]);
     }
 }

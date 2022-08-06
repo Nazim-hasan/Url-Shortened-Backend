@@ -23,7 +23,7 @@ class LoginAPIController extends Controller
             if($token){
                 $myIp = $req->ip();
                 $req->session()->put('MyIpAddress', $myIp);
-                $req->session()->put('APIHitCount', 0);
+                $req->session()->put('APIHitCount', 1);
                 echo "Hit Count". Session()->get('APIHitCount');
                 $client = Client::where('email',$req->email )->first();
                 Client::where('client_id', $client->client_id)
@@ -33,5 +33,10 @@ class LoginAPIController extends Controller
             return $token;
         }
         return "No user found";
+    }
+    public function logout(Request $req){
+        $token = Token::where('token',$req->Token)->first();
+        $token->expired_at = new DateTime();
+        $token->save();
     }
 }

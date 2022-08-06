@@ -11,43 +11,41 @@ use Illuminate\Support\Carbon;
 
 class ShortUrlAPIController extends Controller
 {
-    
-    //
     public function shortUrl(Request $req){
         $mainUrl = $req->mainUrl;
         if ($mainUrl){
             $MyIpAddress = $req->ip(); //get myIP
             $hitCount = Session()->get('APIHitCount');  //get previous spam count
             echo "HitCount = ". $hitCount . '</br>';
-            if($this->isAlreadyExist($mainUrl, $MyIpAddress)){
+            $duplicateUrlCounter = $this->isAlreadyExist($mainUrl, $MyIpAddress);
+            if(!$duplicateUrlCounter){
+                $this->saveToDB($mainUrl, $MyIpAddress);
+                return $this->saveToDB($mainUrl, $MyIpAddress);
+            }
+            if($duplicateUrlCounter){
                 echo "Already exist!!!";
                 $req->session()->put('APIHitCount', $hitCount+1);
                 echo "HitCount = ". $hitCount . '</br>';
                 //incrementing counter for already exist shorten link for same IP's
             }
-            else if(!$this->isAlreadyExist($mainUrl, $MyIpAddress)){
-                $this->saveToDB($mainUrl, $MyIpAddress);
-                return 'Saved';
-            }
+            
             $client = Client::where('ip_address',$MyIpAddress)->first();
-            
-            
-            
-            
-            if($hitCount > 4){
-                $waitingTimeByAdmin = 1; //in minutes
+            $waitingTimeByAdmin = 1; //in minutes
+            $multipleUrlMax = 3;
+            if($hitCount > $multipleUrlMax-1){
+                
                 $isBLocked = $this->setStatusClientDeActive($client, $waitingTimeByAdmin);
                 if($isBLocked){
                     return 'block done';
                 }
                 else{
                     $this->setStatusClientActive($client);
-                    $req->session()->put('APIHitCount', 0);
+                    $req->session()->put('APIHitCount', 1);
                     return $this->saveToDB($mainUrl, $MyIpAddress);
                 }
             }
             
-            else if($client->status === 'active' || ($hitCount >= 0 && $hitCount<5)){
+            else if($client->status === 'active' || ($hitCount >= 1 && $hitCount<$multipleUrlMax)){
                 return $this->saveToDB($mainUrl, $MyIpAddress);
             }
         }
@@ -75,7 +73,9 @@ class ShortUrlAPIController extends Controller
     }
     public function isAlreadyExist($mainUrl, $MyIpAddress){
         $alreadyExist = Url::where('main_url',$mainUrl)->where('client_ip_address',$MyIpAddress)->first();
-        return true;
+        if($alreadyExist){
+            return true;
+        }
     }
     public function makeShort(){
         $shortUrl = Str::random(6);
