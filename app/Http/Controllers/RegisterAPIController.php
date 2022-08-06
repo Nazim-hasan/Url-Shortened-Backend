@@ -15,8 +15,8 @@ class RegisterAPIController extends Controller
         $user->name = $request->name;
         $user->email = $request->email;
         $user->password = $request->password;
-        $user->created_at = new DateTime();;
-        $user->updated_at = new DateTime();;
+        $user->created_at = new DateTime();
+        $user->updated_at = new DateTime();
         $user->save();
         return $user;
     }
