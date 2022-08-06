@@ -18,6 +18,12 @@ class ClientSeeder extends Seeder
     {
         //
         DB::table('clients')->insert([
+            'name'=>'Nazim Hasan',
+            'password'=>'nazu12345',
+            'email'=>'nazim@gmail.com',
+            'status'=>'active',
+        ]);
+        DB::table('clients')->insert([
             'name'=>Str::random(10),
             'password'=>Str::random(15),
             'email'=>Str::random(10).'@gmail.com',
