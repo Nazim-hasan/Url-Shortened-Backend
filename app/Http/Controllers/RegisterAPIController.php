@@ -12,7 +12,6 @@ class RegisterAPIController extends Controller
     public function registration(Request $request){
 
         $user = new PendingUser();
-        $user->pending_users_id = $request->id;
         $user->name = $request->name;
         $user->email = $request->email;
         $user->password = $request->password;
