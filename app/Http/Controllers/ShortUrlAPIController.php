@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Url;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
-use App\Jobs\ProcessPodcast;
+// use App\Jobs\ProcessPodcast;
 use App\Models\Client;
 
 class ShortUrlAPIController extends Controller
@@ -26,12 +26,13 @@ class ShortUrlAPIController extends Controller
             if($hitCount > 4 || $client->status == 'DeActive'){
                 
                 $this->setStatusClientDeActive($client);
-                $activeNow = $this->setStatusClientActive($client);
+
+
+                $activeNow = $this->setTimeout(20000,$client);
                 if($activeNow){
                     $req->session()->put('APIHitCount', 0);
                 }
-                ProcessPodcast::dispatch($activeNow)->delay(now()->addMinutes(1));
-                return 'You are blocked';
+                
             }
             if($client->status === 'active'){
                 return $this->saveToDB($mainUrl, $MyIpAddress);
@@ -40,6 +41,13 @@ class ShortUrlAPIController extends Controller
                 return 'User Blocked!!!';
             }
         }
+    }
+    public function setTimeout($milliseconds,$client)
+    {
+        $seconds=(int)$milliseconds/1000;
+        sleep($seconds);
+        $this->setStatusClientActive($client);
+        return true;
     }
     public function setStatusClientDeActive($client){
         Client::where('client_id', $client->client_id)->update(['status' => 'DeActive']);
