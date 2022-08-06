@@ -33,7 +33,7 @@ class ShortUrlAPIController extends Controller
             if($hitCount > $multipleUrlMax-1){
                 $isBLocked = $this->setStatusClientDeActive($client, $waitingTimeByAdmin);
                 if($isBLocked){
-                    return 'block done';
+                    return 'blocked';
                 }
                 else{
                     $this->setStatusClientActive($client);
@@ -50,7 +50,6 @@ class ShortUrlAPIController extends Controller
     public function isWaitingTimeOver($unblockTime){
         $currentTime = Carbon::now()->tz('Asia/Dhaka');
         if($currentTime->gt($unblockTime)){
-            echo "User can be unblock now";
             return true;
         }
     }
@@ -58,8 +57,7 @@ class ShortUrlAPIController extends Controller
         if($this->isWaitingTimeOver($client->unblock_time)){
             return false;
         }
-        $unblockTime = Carbon::now()->tz('Asia/Dhaka')->addMinutes($time);
-        echo $unblockTime;
+        $unblockTime = Carbon::now()->tz('Asia/Dhaka')->addMinutes($time); 
         Client::where('client_id', $client->client_id)->update(['status' => 'DeActive']);
         Client::where('client_id', $client->client_id)->update(['unblock_time' => $unblockTime]);
         return true;
