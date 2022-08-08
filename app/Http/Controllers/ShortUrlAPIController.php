@@ -25,6 +25,7 @@ class ShortUrlAPIController extends Controller
     }
     public function manageAnonymousHits($anonymousIP, $mainUrl, $req){
         $AnonymousHitCount = Session()->get('anonymousHit');
+        return 'Please Login to use unlimited time.';
                 $url = Url::where('client_ip_address',$anonymousIP)->first();
                 if($url == NULL){
                     $short = $this->saveToDB($mainUrl,$anonymousIP);
@@ -46,11 +47,13 @@ class ShortUrlAPIController extends Controller
         if ($mainUrl){
             if(!$this->isLogin()){
                 $anonymousIP = $req->ip();
+                return $anonymousIP;
                 return $this->manageAnonymousHits($anonymousIP, $mainUrl, $req);
 
             }
             if($this->isLogin()){
                 $MyIpAddress = $req->ip(); //get myIP
+                return $MyIpAddress;
                 $hitCount = Session()->get('APIHitCount');  //get previous hit count
                 $duplicateUrlCounter = $this->isAlreadyExist($mainUrl, $MyIpAddress);
                 if(!$duplicateUrlCounter){
