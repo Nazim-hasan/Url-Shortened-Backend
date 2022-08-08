@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Url;
 use Illuminate\Http\Request;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Str;
 use App\Models\Client;
 use App\Models\Admin;
@@ -28,8 +29,6 @@ class ShortUrlAPIController extends Controller
                 if($url == NULL){
                     $short = $this->saveToDB($mainUrl,$anonymousIP);
                     $req->session()->put('anonymousHit', 1);
-                    echo 'Hit count: ' . $AnonymousHitCount;    
-                    echo 'anonymous get'; 
                     return $short;
                 }
                 if($AnonymousHitCount>2){
@@ -38,7 +37,6 @@ class ShortUrlAPIController extends Controller
                 else if($url != NULL ){
                     $req->session()->put('anonymousHit', $AnonymousHitCount+1);
                     $short = $this->saveToDB($mainUrl,$anonymousIP);
-                    echo 'Hit count: ' . $AnonymousHitCount;  
                     return $short;
                 }
                 return 'Something wrong';
@@ -121,14 +119,16 @@ class ShortUrlAPIController extends Controller
             $url->user_id = 1;
             $url->client_ip_address = $MyIpAddress;
             $url->converted_url = $this->makeShort();
-            echo 'Saving';
             $url->save();
-            return $url->converted_url;
+            $urlHeader = 'http://127.0.0.1:8000/api/getURL/';
+            $shortURL = $urlHeader.$url->converted_url;
+            // $shortURL = 'http://127.0.0.1:8000/api/short/'.$url->converted_url;
+            return $shortURL;
     }
     public function getShortenedUrl(Request $req){
-        if($req->shortUrl){
-            $url = Url::where('converted_url',$req->shortUrl)->first();
-            return $url->main_url;
+        if($req->short){
+            $url = Url::where('converted_url',$req->short)->first();
+            return redirect()->to($url->main_url)->send();
         }
     }
     

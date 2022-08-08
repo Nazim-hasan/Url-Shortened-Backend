@@ -25,7 +25,6 @@ class LoginAPIController extends Controller
                 $req->session()->put('MyIpAddress', $myIp);
                 $req->session()->put('APIHitCount', 1);
                 $req->session()->put('ClientEmail', $client->email);
-                echo "Hit Count". Session()->get('APIHitCount');
                 $client = Client::where('email',$req->email )->first();
                 Client::where('client_id', $client->client_id)
                     ->update(['ip_address' => $myIp, 'status' => 'active', 'unblock_time' => NULL ]);

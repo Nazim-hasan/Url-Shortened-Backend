@@ -25,6 +25,6 @@ Route::post('/login',[LoginAPIController::class,'login']);
 Route::post('/logout',[LoginAPIController::class,'logout']);
 Route::post('/register',[RegisterAPIController::class,'registration']);
 Route::post('/short',[ShortUrlAPIController::class,'shortUrl']);
-Route::post('/shorten',[ShortUrlAPIController::class,'getShortenedUrl']);
+Route::get('/getURL/{short}',[ShortUrlAPIController::class,'getShortenedUrl']);
 Route::post('/spammingLimit',[AdminAPIController::class,'spammingLimit'])->middleware('APIAuth');
 Route::post('/waitingTime',[AdminAPIController::class,'waitingTime'])->middleware('APIAuth');
