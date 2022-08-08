@@ -41,8 +41,28 @@ class ShortUrlAPIController extends Controller
                 }
                 return 'Something wrong';
     }
+    public function handleClient($clientIP,$req){
+        if($req->clientEmail){
+            
+            Client::where('email', $req->clientEmail)->update(['ip_address' => $clientIP]);
+            $myClient = Client::where('email', $req->clientEmail)->first();
+            echo 'Client INFO'.$myClient;
+            $duplicateUrlCounter = $this->isAlreadyExist($req->mainUrl, $clientIP);
+            $hitCount = $myClient->warning;
+            if(!$duplicateUrlCounter){
+                return $this->saveToDB($req->mainUrl, $clientIP);
+            }
+            if($duplicateUrlCounter){
+                $myClient->warning = ($myClient->warning+1);
+            }
+            return $this->addToDatabase($clientIP, $req->mainUrl);
+        }
+    }
     public function shortUrl(Request $req){
         $mainUrl = $req->mainUrl;
+        if($req->clientIP){
+            $this->handleClient($req->clientIP,$req);
+        }
         if ($mainUrl){
             if(!$this->isLogin()){
                 $anonymousIP = $req->ip();
@@ -51,37 +71,55 @@ class ShortUrlAPIController extends Controller
             }
             if($this->isLogin()){
                 $MyIpAddress = $req->ip(); //get myIP
-                $hitCount = Session()->get('APIHitCount');  //get previous hit count
+                echo 'my IPPPP: ' .$MyIpAddress;
+                $ClientIP = $req->clientIP; //get myIP
+                $client = Client::where('ip_address', $MyIpAddress)->first();
+                echo $client;
+                $hitCount = $client->warning;
+
+                // $hitCount = Session()->get('APIHitCount');  //get previous hit count
                 $duplicateUrlCounter = $this->isAlreadyExist($mainUrl, $MyIpAddress);
                 if(!$duplicateUrlCounter){
-                    //$this->saveToDB($mainUrl, $MyIpAddress);
+                    echo 'no duplicate';
                     return $this->saveToDB($mainUrl, $MyIpAddress);     //fresh Url directly stores 
                 }
                 if($duplicateUrlCounter){
-                    $req->session()->put('APIHitCount', $hitCount+1);
+                    $hitCount++;
+                    Client::where('ip_address', $MyIpAddress)->update(['warning' => $hitCount]);
+                    // $req->session()->put('APIHitCount', $hitCount+1);
                     //incrementing counter for already exist shorten link for same IP's
                 }
+                return $this->addToDatabase($MyIpAddress, $mainUrl);
                 
-                $client = Client::where('ip_address',$MyIpAddress)->first();
-                $admin = Admin::where('id',1)->first();
-                $waitingTimeByAdmin = $admin->waiting_time; //in minutes
-                $multipleUrlMax = $admin->spamming_limit;
-                if($hitCount > $multipleUrlMax-1){
-                    $isBLocked = $this->setStatusClientDeActive($client, $waitingTimeByAdmin);
-                    if($isBLocked){
-                        return 'blocked';
-                    }
-                    else{
-                        $this->setStatusClientActive($client);
-                        $req->session()->put('APIHitCount', 1);
-                        return $this->saveToDB($mainUrl, $MyIpAddress);
-                    }
-                }
-                
-                else if($client->status === 'active' || ($hitCount >= 1 && $hitCount<$multipleUrlMax)){
-                    return $this->saveToDB($mainUrl, $MyIpAddress);
-                }
             }
+        }
+    }
+    public function addToDatabase($MyIpAddress, $mainUrl){
+        echo 'My IP is: ' . $MyIpAddress;
+        $client = Client::where('ip_address',$MyIpAddress)->first();
+        $hitCount = $client->warning;
+        echo $hitCount;
+        $admin = Admin::where('id',1)->first();
+        $waitingTimeByAdmin = $admin->waiting_time; //in minutes
+        $multipleUrlMax = $admin->spamming_limit;
+        echo 'hit count before check' . $hitCount . '    ';
+        if($hitCount >= $multipleUrlMax){
+            $isBLocked = $this->setStatusClientDeActive($client, $waitingTimeByAdmin);
+            if($isBLocked){
+                return 'blocked';
+            }
+            else{
+                $this->setStatusClientActive($client);
+                $client->warning = 0;
+                $client->save();
+                Client::where('ip_address', $client->ip_address)->update(['warning' => 0]);
+                // $req->session()->put('APIHitCount', 1);
+                return $this->saveToDB($mainUrl, $MyIpAddress);
+            }
+        }
+                
+        else if($client->status === 'active' || ($hitCount >= 1 && $hitCount<$multipleUrlMax)){
+            return $this->saveToDB($mainUrl, $MyIpAddress);
         }
     }
     public function isWaitingTimeOver($unblockTime){
@@ -91,21 +129,23 @@ class ShortUrlAPIController extends Controller
         }
     }
     public function setStatusClientDeActive($client, $time){
+        echo 'deactiving ';
         if($this->isWaitingTimeOver($client->unblock_time)){
             return false;
         }
         $unblockTime = Carbon::now()->tz('Asia/Dhaka')->addMinutes($time); 
-        Client::where('client_id', $client->client_id)->update(['status' => 'DeActive']);
-        Client::where('client_id', $client->client_id)->update(['unblock_time' => $unblockTime]);
+        Client::where('id', $client->id)->update(['status' => 'DeActive', 'unblock_time' => $unblockTime]);
         return true;
     }
     public function setStatusClientActive($client){
-        Client::where('client_id', $client->client_id)->update(['status' => 'active', 'unblock_time' => NULL ]);
-            return true;
+        Client::where('id', $client->id)->update(['status' => 'active', 'unblock_time' => NULL, 'warning' => '0' ]);
+        echo 'activing client';  
+        return true;
     }
     public function isAlreadyExist($mainUrl, $MyIpAddress){
         $alreadyExist = Url::where('main_url',$mainUrl)->where('client_ip_address',$MyIpAddress)->first();
         if($alreadyExist){
+            echo 'already exist';
             return true;
         }
     }

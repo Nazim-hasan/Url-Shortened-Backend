@@ -18,6 +18,7 @@ return new class extends Migration
             $table->string('name');
             $table->string('password');
             $table->string('email');
+            $table->integer('warning')->default('0');
             $table->string('profile_picture')->nullable();
             $table->string('ip_address')->nullable();
             $table->string('otp')->nullable();
