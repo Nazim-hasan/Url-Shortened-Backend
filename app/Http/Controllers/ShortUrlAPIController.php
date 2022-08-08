@@ -63,7 +63,7 @@ class ShortUrlAPIController extends Controller
                 }
                 
                 $client = Client::where('ip_address',$MyIpAddress)->first();
-                $admin = Admin::where('admin_id',1)->first();
+                $admin = Admin::where('id',1)->first();
                 $waitingTimeByAdmin = $admin->waiting_time; //in minutes
                 $multipleUrlMax = $admin->spamming_limit;
                 if($hitCount > $multipleUrlMax-1){
