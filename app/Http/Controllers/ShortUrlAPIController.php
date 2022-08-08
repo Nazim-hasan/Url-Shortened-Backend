@@ -47,13 +47,11 @@ class ShortUrlAPIController extends Controller
         if ($mainUrl){
             if(!$this->isLogin()){
                 $anonymousIP = $req->ip();
-                return $anonymousIP;
                 return $this->manageAnonymousHits($anonymousIP, $mainUrl, $req);
 
             }
             if($this->isLogin()){
                 $MyIpAddress = $req->ip(); //get myIP
-                return $MyIpAddress;
                 $hitCount = Session()->get('APIHitCount');  //get previous hit count
                 $duplicateUrlCounter = $this->isAlreadyExist($mainUrl, $MyIpAddress);
                 if(!$duplicateUrlCounter){
