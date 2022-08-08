@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Url;
 use Illuminate\Http\Request;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Str;
 use App\Models\Client;
 use App\Models\Admin;
@@ -11,39 +12,75 @@ use Illuminate\Support\Carbon;
 
 class ShortUrlAPIController extends Controller
 {
+    public function isLogin(){
+        $clientMail = Session()->get('ClientEmail');
+        $client = Client::where('email',$clientMail)->first();
+        if($client == NULL){
+            return false;
+        }
+        if($client != NULL){
+            return true;
+        }
+
+    }
+    public function manageAnonymousHits($anonymousIP, $mainUrl, $req){
+        $AnonymousHitCount = Session()->get('anonymousHit');
+                $url = Url::where('client_ip_address',$anonymousIP)->first();
+                if($url == NULL){
+                    $short = $this->saveToDB($mainUrl,$anonymousIP);
+                    $req->session()->put('anonymousHit', 1);
+                    return $short;
+                }
+                if($AnonymousHitCount>2){
+                    return 'Please Login to use unlimited time.';
+                }
+                else if($url != NULL ){
+                    $req->session()->put('anonymousHit', $AnonymousHitCount+1);
+                    $short = $this->saveToDB($mainUrl,$anonymousIP);
+                    return $short;
+                }
+                return 'Something wrong';
+    }
     public function shortUrl(Request $req){
         $mainUrl = $req->mainUrl;
         if ($mainUrl){
-            $MyIpAddress = $req->ip(); //get myIP
-            $hitCount = Session()->get('APIHitCount');  //get previous hit count
-            $duplicateUrlCounter = $this->isAlreadyExist($mainUrl, $MyIpAddress);
-            if(!$duplicateUrlCounter){
-                $this->saveToDB($mainUrl, $MyIpAddress);
-                return $this->saveToDB($mainUrl, $MyIpAddress);     //fresh Url directly stores 
+            if(!$this->isLogin()){
+                $anonymousIP = $req->ip();
+                return $this->manageAnonymousHits($anonymousIP, $mainUrl, $req);
+
             }
-            if($duplicateUrlCounter){
-                $req->session()->put('APIHitCount', $hitCount+1);
-                //incrementing counter for already exist shorten link for same IP's
-            }
-            
-            $client = Client::where('ip_address',$MyIpAddress)->first();
-            $admin = Admin::where('admin_id',1)->first();
-            $waitingTimeByAdmin = $admin->waiting_time; //in minutes
-            $multipleUrlMax = $admin->spamming_limit;
-            if($hitCount > $multipleUrlMax-1){
-                $isBLocked = $this->setStatusClientDeActive($client, $waitingTimeByAdmin);
-                if($isBLocked){
-                    return 'blocked';
+            if($this->isLogin()){
+                $MyIpAddress = $req->ip(); //get myIP
+                $hitCount = Session()->get('APIHitCount');  //get previous hit count
+                $duplicateUrlCounter = $this->isAlreadyExist($mainUrl, $MyIpAddress);
+                if(!$duplicateUrlCounter){
+                    //$this->saveToDB($mainUrl, $MyIpAddress);
+                    return $this->saveToDB($mainUrl, $MyIpAddress);     //fresh Url directly stores 
                 }
-                else{
-                    $this->setStatusClientActive($client);
-                    $req->session()->put('APIHitCount', 1);
+                if($duplicateUrlCounter){
+                    $req->session()->put('APIHitCount', $hitCount+1);
+                    //incrementing counter for already exist shorten link for same IP's
+                }
+                
+                $client = Client::where('ip_address',$MyIpAddress)->first();
+                $admin = Admin::where('admin_id',1)->first();
+                $waitingTimeByAdmin = $admin->waiting_time; //in minutes
+                $multipleUrlMax = $admin->spamming_limit;
+                if($hitCount > $multipleUrlMax-1){
+                    $isBLocked = $this->setStatusClientDeActive($client, $waitingTimeByAdmin);
+                    if($isBLocked){
+                        return 'blocked';
+                    }
+                    else{
+                        $this->setStatusClientActive($client);
+                        $req->session()->put('APIHitCount', 1);
+                        return $this->saveToDB($mainUrl, $MyIpAddress);
+                    }
+                }
+                
+                else if($client->status === 'active' || ($hitCount >= 1 && $hitCount<$multipleUrlMax)){
                     return $this->saveToDB($mainUrl, $MyIpAddress);
                 }
-            }
-            
-            else if($client->status === 'active' || ($hitCount >= 1 && $hitCount<$multipleUrlMax)){
-                return $this->saveToDB($mainUrl, $MyIpAddress);
             }
         }
     }
@@ -83,11 +120,16 @@ class ShortUrlAPIController extends Controller
             $url->client_ip_address = $MyIpAddress;
             $url->converted_url = $this->makeShort();
             $url->save();
-            return $url->converted_url;
+            $urlHeader = 'http://127.0.0.1:8000/api/getURL/';
+            $shortURL = $urlHeader.$url->converted_url;
+            // $shortURL = 'http://127.0.0.1:8000/api/short/'.$url->converted_url;
+            return $shortURL;
     }
     public function getShortenedUrl(Request $req){
-        $url = Url::where('converted_url',$req->shortUrl)->first();
-        return $url->main_url;
+        if($req->short){
+            $url = Url::where('converted_url',$req->short)->first();
+            return redirect()->to($url->main_url)->send();
+        }
     }
     
 }

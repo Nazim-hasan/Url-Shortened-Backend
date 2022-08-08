@@ -24,7 +24,7 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 Route::post('/login',[LoginAPIController::class,'login']);
 Route::post('/logout',[LoginAPIController::class,'logout']);
 Route::post('/register',[RegisterAPIController::class,'registration']);
-Route::post('/short',[ShortUrlAPIController::class,'shortUrl'])->middleware('APIAuth');
-Route::post('/shorten',[ShortUrlAPIController::class,'getShortenedUrl'])->middleware('APIAuth');
+Route::post('/short',[ShortUrlAPIController::class,'shortUrl']);
+Route::get('/getURL/{short}',[ShortUrlAPIController::class,'getShortenedUrl']);
 Route::post('/spammingLimit',[AdminAPIController::class,'spammingLimit'])->middleware('APIAuth');
 Route::post('/waitingTime',[AdminAPIController::class,'waitingTime'])->middleware('APIAuth');
