@@ -25,7 +25,6 @@ class ShortUrlAPIController extends Controller
     }
     public function manageAnonymousHits($anonymousIP, $mainUrl, $req){
         $AnonymousHitCount = Session()->get('anonymousHit');
-        return 'Please Login to use unlimited time.';
                 $url = Url::where('client_ip_address',$anonymousIP)->first();
                 if($url == NULL){
                     $short = $this->saveToDB($mainUrl,$anonymousIP);
