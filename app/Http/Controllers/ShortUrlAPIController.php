@@ -42,26 +42,30 @@ class ShortUrlAPIController extends Controller
                 return 'Something wrong';
     }
     public function handleClient($clientIP,$req){
+        if($req->clientIP && !$req->clientEmail){
+            return $this->manageAnonymousHits($clientIP, $req->mainUrl, $req);
+        }
         if($req->clientEmail){
-            
             Client::where('email', $req->clientEmail)->update(['ip_address' => $clientIP]);
             $myClient = Client::where('email', $req->clientEmail)->first();
-            echo 'Client INFO'.$myClient;
             $duplicateUrlCounter = $this->isAlreadyExist($req->mainUrl, $clientIP);
-            $hitCount = $myClient->warning;
             if(!$duplicateUrlCounter){
                 return $this->saveToDB($req->mainUrl, $clientIP);
             }
             if($duplicateUrlCounter){
-                $myClient->warning = ($myClient->warning+1);
+                $hitCount = ($myClient->warning+1);
+                Client::where('email', $req->clientEmail)->update(['warning' => $hitCount]);
             }
+            return $this->addToDatabase($clientIP, $req->mainUrl);
+        }
+        else{
             return $this->addToDatabase($clientIP, $req->mainUrl);
         }
     }
     public function shortUrl(Request $req){
         $mainUrl = $req->mainUrl;
         if($req->clientIP){
-            $this->handleClient($req->clientIP,$req);
+            return $this->handleClient($req->clientIP,$req);
         }
         if ($mainUrl){
             if(!$this->isLogin()){
@@ -71,16 +75,13 @@ class ShortUrlAPIController extends Controller
             }
             if($this->isLogin()){
                 $MyIpAddress = $req->ip(); //get myIP
-                echo 'my IPPPP: ' .$MyIpAddress;
                 $ClientIP = $req->clientIP; //get myIP
                 $client = Client::where('ip_address', $MyIpAddress)->first();
-                echo $client;
                 $hitCount = $client->warning;
 
                 // $hitCount = Session()->get('APIHitCount');  //get previous hit count
                 $duplicateUrlCounter = $this->isAlreadyExist($mainUrl, $MyIpAddress);
                 if(!$duplicateUrlCounter){
-                    echo 'no duplicate';
                     return $this->saveToDB($mainUrl, $MyIpAddress);     //fresh Url directly stores 
                 }
                 if($duplicateUrlCounter){
@@ -95,14 +96,14 @@ class ShortUrlAPIController extends Controller
         }
     }
     public function addToDatabase($MyIpAddress, $mainUrl){
-        echo 'My IP is: ' . $MyIpAddress;
         $client = Client::where('ip_address',$MyIpAddress)->first();
-        $hitCount = $client->warning;
-        echo $hitCount;
+        $hitCount = 0;
+        if($client){
+            $hitCount = $client->warning;
+        }
         $admin = Admin::where('id',1)->first();
         $waitingTimeByAdmin = $admin->waiting_time; //in minutes
         $multipleUrlMax = $admin->spamming_limit;
-        echo 'hit count before check' . $hitCount . '    ';
         if($hitCount >= $multipleUrlMax){
             $isBLocked = $this->setStatusClientDeActive($client, $waitingTimeByAdmin);
             if($isBLocked){
@@ -112,7 +113,7 @@ class ShortUrlAPIController extends Controller
                 $this->setStatusClientActive($client);
                 $client->warning = 0;
                 $client->save();
-                Client::where('ip_address', $client->ip_address)->update(['warning' => 0]);
+                Client::where('ip_address', $client->ip_address)->update(['warning' => $hitCount]);
                 // $req->session()->put('APIHitCount', 1);
                 return $this->saveToDB($mainUrl, $MyIpAddress);
             }
@@ -129,7 +130,6 @@ class ShortUrlAPIController extends Controller
         }
     }
     public function setStatusClientDeActive($client, $time){
-        echo 'deactiving ';
         if($this->isWaitingTimeOver($client->unblock_time)){
             return false;
         }
@@ -139,13 +139,11 @@ class ShortUrlAPIController extends Controller
     }
     public function setStatusClientActive($client){
         Client::where('id', $client->id)->update(['status' => 'active', 'unblock_time' => NULL, 'warning' => '0' ]);
-        echo 'activing client';  
         return true;
     }
     public function isAlreadyExist($mainUrl, $MyIpAddress){
         $alreadyExist = Url::where('main_url',$mainUrl)->where('client_ip_address',$MyIpAddress)->first();
         if($alreadyExist){
-            echo 'already exist';
             return true;
         }
     }
@@ -160,7 +158,7 @@ class ShortUrlAPIController extends Controller
             $url->client_ip_address = $MyIpAddress;
             $url->converted_url = $this->makeShort();
             $url->save();
-            $urlHeader = 'https://desolate-shelf-39003.herokuapp.com/api/getURL/';
+            $urlHeader = 'http://127.0.0.1:8000/api/getURL/';
             $shortURL = $urlHeader.$url->converted_url;
             // $shortURL = 'http://127.0.0.1:8000/api/short/'.$url->converted_url;
             return $shortURL;

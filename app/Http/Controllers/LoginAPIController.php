@@ -27,9 +27,9 @@ class LoginAPIController extends Controller
                 $req->session()->put('ClientEmail', $client->email);
                 Client::where('email', $client->email)
                     ->update(['ip_address' => $myIp]);
-                return $myIp;
+                    return $token;
             }
-            return $token;
+            return 'Invalid username or password';
         }
         return "No user found";
     }
