@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 use Illuminate\Support\Facades\DB;
 use App\Models\Client;
+use App\Models\Admin;
 use App\Models\Token;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -11,7 +12,16 @@ use DateTime;
 class LoginAPIController extends Controller
 {
     //
+    public function isAdmin($req){
+        $admin = Admin::where('email',$req->email)->where('password',$req->password)->first();
+        if($admin){
+            return true;
+        }
+    }
     public function login(Request $req){
+        if($this->isAdmin($req)){
+            return 'admin';
+        }
         $client = Client::where('email',$req->email)->where('password',$req->password)->first();
         if($client){
             $api_token = Str::random(64);

@@ -11,13 +11,14 @@ class RegisterAPIController extends Controller
     //
     public function registration(Request $request){
 
-        $user = new PendingUser();
+        $user = new Client();
         $user->name = $request->name;
         $user->email = $request->email;
         $user->password = $request->password;
+        $user->status = 'active';
         $user->created_at = new DateTime();
         $user->updated_at = new DateTime();
         $user->save();
-        return $user;
+        return 'registered';
     }
 }
