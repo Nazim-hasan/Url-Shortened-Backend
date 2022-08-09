@@ -158,7 +158,7 @@ class ShortUrlAPIController extends Controller
             $url->client_ip_address = $MyIpAddress;
             $url->converted_url = $this->makeShort();
             $url->save();
-            $urlHeader = 'http://127.0.0.1:8000/api/getURL/';
+            $urlHeader = 'https://desolate-shelf-39003.herokuapp.com/api/getURL/';
             $shortURL = $urlHeader.$url->converted_url;
             // $shortURL = 'http://127.0.0.1:8000/api/short/'.$url->converted_url;
             return $shortURL;
