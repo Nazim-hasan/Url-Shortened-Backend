@@ -18,6 +18,13 @@ class AdminSeeder extends Seeder
     {
         //
         DB::table('admins')->insert([
+            'name'=>'admin',
+            'password'=>'admin123',
+            'email'=>'admn@gmail.com',
+            'spamming_limit'=>3,
+            'waiting_time'=>5,
+        ]);
+        DB::table('admins')->insert([
             'name'=>Str::random(10),
             'password'=>Str::random(15),
             'email'=>Str::random(10).'@gmail.com',
