@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 use Illuminate\Support\Facades\DB;
 use App\Models\Client;
+use App\Models\Admin;
 use App\Models\Token;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -11,7 +12,16 @@ use DateTime;
 class LoginAPIController extends Controller
 {
     //
+    public function isAdmin($req){
+        $admin = Admin::where('email',$req->email)->where('password',$req->password)->first();
+        if($admin){
+            return true;
+        }
+    }
     public function login(Request $req){
+        if($this->isAdmin($req)){
+            return 'admin';
+        }
         $client = Client::where('email',$req->email)->where('password',$req->password)->first();
         if($client){
             $api_token = Str::random(64);
@@ -25,12 +35,11 @@ class LoginAPIController extends Controller
                 $req->session()->put('MyIpAddress', $myIp);
                 $req->session()->put('APIHitCount', 1);
                 $req->session()->put('ClientEmail', $client->email);
-                $client = Client::where('email',$req->email )->first();
-                Client::where('client_id', $client->client_id)
-                    ->update(['ip_address' => $myIp, 'status' => 'active', 'unblock_time' => NULL ]);
-                return $myIp;
+                Client::where('email', $client->email)
+                    ->update(['ip_address' => $myIp]);
+                    return $token;
             }
-            return $token;
+            return 'Invalid username or password';
         }
         return "No user found";
     }

@@ -15,7 +15,7 @@ return new class extends Migration
     {
         Schema::create('pending_users', function (Blueprint $table) {
             
-            $table->id('pending_users_id');
+            $table->id();
             $table->string('name');
             $table->string('password');
             $table->string('email');
