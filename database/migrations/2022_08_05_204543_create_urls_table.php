@@ -17,7 +17,7 @@ return new class extends Migration
             $table->id();
             $table->string('main_url');
             $table->string('converted_url')->nullable();
-            $table->unsignedBigInteger('user_id');
+            $table->unsignedBigInteger('user_id')->nullable();
             $table->foreign('user_id')->references('id')->on('clients')->onDelete('cascade');
             $table->string('client_ip_address');
             $table->timestamps();
